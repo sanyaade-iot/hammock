@@ -374,28 +374,48 @@ def create_output_directory(dirname):
     if not os.path.exists(dirname):
         os.makedirs(dirname)
 
-def gen_single_page(toc, elem):
-    dirname = "out/"
-    create_output_directory(dirname)
-    destfile = open(dirname + "single_page.html", "w")
+def gen_single_page(outdir, outfilename, toc, elem):
+    if outdir[-1] != "/":
+        outdir += "/"
+    create_output_directory(outdir)
+    destfile = open(outdir + outfilename, "w")
     if not destfile:
-        print "FATAL: Could not open " + dirname + "single_page.html for write."
+        print "FATAL: Could not open " + outdir + outfilename + " for write."
         return
 
     contents = _parse_element(toc, elem)
     destfile.write(contents)
     destfile.close()
 
+def get_option(args, argname, default):
+    for arg in args:
+        if arg.startswith(argname):
+            return arg.split("=")[1]
+    return default
 
-def main():
+def get_arg(args, idx):
+    for arg in args:
+        if arg.startswith("-"):
+            continue
+        if idx == 0:
+            return arg
+        idx = idx -1
+    return None
+
+def main(infilename):
+    outdir = get_option(sys.argv, "--outdir", "out/")
+    outfilename = ".".join(infilename.split(".")[0:-1]) + ".html"
     pageMode = "single" # | "chapters" | "sections"
-    tree = ET.parse(sys.argv[1])
+    tree = ET.parse(infilename)
     root = tree.getroot()
     toc = ToC(root)
-    gen_single_page(toc, root)
+    gen_single_page(outdir, outfilename, toc, root)
 
 if __name__ == "__main__":
-    if len(sys.argv) < 2:
-        print "usage: python hammock.py <xmlfilename>"
+    infilename = get_arg(sys.argv, 1)
+    if infilename == None:
+        print "usage: python hammock.py [<OPTIONS>] <XMLFILENAME>"
+        print "options:"
+        print "   --outdir=/path/to/outdir"
         sys.exit(0)
-    main()
+    main(infilename)
