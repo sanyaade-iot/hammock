@@ -1,0 +1,31 @@
+<doc logo="http://25.media.tumblr.com/tumblr_m9gus8QYjY1rw0ggfo3_r5_400.gif" title="Lorem Ipsum">
+<chapter title="Example Page">
+    <section title="Section 1">
+        Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do
+        eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad
+        minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip
+        ex ea commodo consequat. Duis aute irure dolor in reprehenderit in
+        voluptate velit esse cillum dolore eu fugiat nulla pariatur.
+        <subsection title="Subsection">
+            Excepteur
+            sint occaecat cupidatat non proident, sunt in culpa qui officia
+            deserunt mollit anim id est laborum.
+            <code>
+                GET /api/lorem
+            </code>
+            <tbl>
+                <row>
+                    <cell header="1">URL</cell>
+                    <cell header="1">Operations</cell>
+                    <cell header="1">Description</cell>
+                </row>
+                <row>
+                    <cell>api/lorem</cell>
+                    <cell>GET</cell>
+                    <cell>Get junk text</cell>
+                </row>
+            </tbl>
+        </subsection>
+    </section>
+</chapter>
+</doc>
