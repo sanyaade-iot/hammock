@@ -198,24 +198,14 @@ def fixup_code(text):
     return out.strip()
 
 
+# Returns tuple:
+#   (HEAD_HTML, TOC_HTML, CONTENTS_HTML)
 def parse_doc(toc, elem):
-    return """
-<html>
-    <head>
-        <link href='hammock-custom.css' rel='stylesheet' type='text/css'>
-        """ + toc.script() + """
-    </head>
-    <body>
-        """ + toc.html() + """
-        <div class=hammock-doc-outer>
-            <div class=hammock-doc-header>
-                <img src='""" + elem.attrib['logo'] + """'></img>""" + elem.attrib['title'] + """<br>
-            </div>
-            """ + _parse_inner_xml(toc, elem) + """
-        </div>
-        <br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br>
-    </body>
-<html>"""
+    return (
+        "<link href='hammock-custom.css' rel='stylesheet' type='text/css'>" + toc.script(),
+        toc.html(),
+        "<div class=hammock-doc-outer>" + _parse_inner_xml(toc, elem) + "</div>"
+    )
 
 def parse_chapter(toc, elem, multipage=False):
     if multipage:
@@ -374,7 +364,15 @@ def create_output_directory(dirname):
     if not os.path.exists(dirname):
         os.makedirs(dirname)
 
-def gen_single_page(outdir, outfilename, toc, elem):
+# html_tuple is:
+#   (HEAD_HTML, TOC_HTML, CONTENT_HTML)
+def _apply_template(template, html_tuple):
+    out = template.replace("{HAMMOCK_HEAD}", html_tuple[0])
+    out = out.replace("{HAMMOCK_TOC}", html_tuple[1])
+    out = out.replace("{HAMMOCK_CONTENTS}", html_tuple[2])
+    return out
+
+def gen_single_page(outdir, outfilename, templateFilename, toc, elem):
     if outdir[-1] != "/":
         outdir += "/"
     create_output_directory(outdir)
@@ -383,9 +381,27 @@ def gen_single_page(outdir, outfilename, toc, elem):
         print "FATAL: Could not open " + outdir + outfilename + " for write."
         return
 
-    contents = _parse_element(toc, elem)
-    destfile.write(contents)
+    (head, toc, contents) = _parse_element(toc, elem)
+
+    template = """
+<html>
+    <head>
+        {HAMMOCK_HEAD}
+    </head>
+    <body>
+        {HAMMOCK_TOC}
+        {HAMMOCK_BODY}
+    </body>
+</html>"""
+
+    if templateFilename != "":
+        with open(templateFilename) as templateFile:
+            template = templateFile.read()
+
+    html = _apply_template(template, (head, toc, contents))
+    destfile.write(html)
     destfile.close()
+
 
 def get_option(args, argname, default):
     for arg in args:
@@ -404,12 +420,13 @@ def get_arg(args, idx):
 
 def main(infilename):
     outdir = get_option(sys.argv, "--outdir", "out/")
+    template = get_option(sys.argv, "--template", "")
     outfilename = ".".join(infilename.split(".")[0:-1]) + ".html"
     pageMode = "single" # | "chapters" | "sections"
     tree = ET.parse(infilename)
     root = tree.getroot()
     toc = ToC(root)
-    gen_single_page(outdir, outfilename, toc, root)
+    gen_single_page(outdir, outfilename, template, toc, root)
 
 if __name__ == "__main__":
     infilename = get_arg(sys.argv, 1)
@@ -417,5 +434,6 @@ if __name__ == "__main__":
         print "usage: python hammock.py [<OPTIONS>] <XMLFILENAME>"
         print "options:"
         print "   --outdir=/path/to/outdir"
+        print "   --template=templatefile"
         sys.exit(0)
     main(infilename)
