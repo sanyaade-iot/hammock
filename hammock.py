@@ -213,7 +213,7 @@ def parse_chapter(toc, elem, multipage=False):
     else:
         return """
             <div class=hammock-chapter-outer>
-                <a id=""" + file_namify(elem.attrib["title"]) + """ name=""" + file_namify(elem.attrib["title"]) + """></a>
+                <a class=hammock-a-name id=""" + file_namify(elem.attrib["title"]) + """ name=""" + file_namify(elem.attrib["title"]) + """></a>
                 <div class=hammock-chapter-title>
                     """ + elem.attrib["title"] + """
                 </div>
@@ -225,7 +225,7 @@ def parse_chapter(toc, elem, multipage=False):
 def parse_section(toc, elem):
     return """
         <div class=hammock-section-outer>
-            <a id=""" + file_namify(elem.attrib["title"]) + """ name=""" + file_namify(elem.attrib["title"]) + """></a>
+            <a class=hammock-a-name id=""" + file_namify(elem.attrib["title"]) + """ name=""" + file_namify(elem.attrib["title"]) + """></a>
             <div class=hammock-section-title>
                 """ + elem.attrib["title"] + """
             </div>
