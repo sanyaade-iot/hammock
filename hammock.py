@@ -277,10 +277,53 @@ def parse_p(toc, elem):
 def parse_icode(toc, elem):
     return "<span class=hammock-icode>" + fixup_code(toc, elem.text + _parse_children(toc, elem)) + "</span>"
 
+mc_id = 0
+
+def parse_multicode(toc, elem):
+    start_id = mc_id
+    idx = 0
+    out = "<div class='hammock-multicode-outer'><div class=hammock-multicode-bar>"
+    for child in elem:
+        if "title" in child.attrib:
+            out += "<div id=mctab" + str(start_id+idx) + " class='hammock-multicode-tab'>"
+            out += child.attrib["title"]
+            out += "</div>"
+            idx += 1
+    out += "</div>" + _parse_children(toc, elem) + "</div>"
+
+    end_id = start_id + len(elem)
+
+    # Generate script
+    out += "<script>"
+    for i in range(start_id, end_id):
+        out += "$(\"#mctab" + str(i) + "\").on('click', function() {"
+        for j in range(start_id, end_id):
+            if i == j:
+                out += "$(\"#mc" + str(j) + "\").show();"
+            else:
+                out += "$(\"#mc" + str(j) + "\").hide();"
+            out += "$(\"#mctab" + str(j) + "\").toggleClass('hammock-multicode-selected', " + str(i) + "==" + str(j) + ");"
+        out += "});"
+        if i == start_id:
+            out += "$(\"#mctab" + str(i) + "\").toggleClass('hammock-multicode-selected', 1);"
+        else:
+            out += "$(\"#mc" + str(i) + "\").hide();"
+            
+    out += "</script>"
+    return out;
+
+def parse_mc_item(toc, elem):
+    global mc_id 
+    out = "<div id=mc" + str(mc_id) + " class=hammock-multicode-item>" + parse_code(toc, elem) + "</div>"
+    mc_id += 1
+    return out
+
 def parse_code(toc, elem):
     cssClass = "hammock-code"
     if "syntax" in elem.attrib:
         cssClass += " sh_" + elem.attrib['syntax'];
+    elif "prettyprint" in elem.attrib:
+        cssClass += " prettyprint"
     return "<pre class='" + cssClass + "'>" + fixup_code(toc, elem.text + _parse_children(toc, elem)) + "</pre>"
 
 def parse_output(toc, elem):
