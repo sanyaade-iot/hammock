@@ -42,7 +42,6 @@ class ToC:
 
     def gen(self, elem):
         out = "<div class='hammock-toc-outer'>"
-        out += "<div class='hammock-toc-title'>Contents</div>"
         out += self._toc_parse_element(elem)
         out += "</div>"
         self._html = out
@@ -107,6 +106,11 @@ window.onload = function() {
 
     def _toc_parse_element(self, elem):
         out = ""
+        if elem.tag == "doc":
+            toc_title = "Contents"
+            if "toc_title" in elem.attrib:
+                toc_title = elem.attrib["toc_title"]
+            out += "<div class='hammock-toc-title'>" + toc_title + "</div>"
         if elem.tag == "chapter":
             out += "<div id='" + self._toc_id(elem) + "' class='hammock-toc-chapter'><a href='" + self._href(elem) + "'>" + elem.attrib["title"] + "</a></div>"
             self.autolinks.append((elem.attrib["title"], self._href(elem)))
@@ -181,7 +185,7 @@ def escape(text):
     text = text.replace(">", "&gt;")
     return text;
 
-def fixup_code(text):
+def fixup_code(toc, text):
     out = ""
 
     # Determine indentation of first non-blank line.  Then subtract that much
@@ -195,6 +199,7 @@ def fixup_code(text):
     for line in lines:
         out += line[shift:] + "\n"
 
+    out = toc.autolink(out)
     return out.strip()
 
 
@@ -256,15 +261,33 @@ def parse_subsubsection(toc, elem):
             </div>
         </div>"""
 
-def parse_b(toc, elem):
-    return "<b>" + fixup_code(elem.text + _parse_children(toc, elem)) + "</b>"
+def parse_a(toc, elem):
+    text = elem.text
+    if text == None:
+        text = ""
 
+    return "<a " + write_all_attribs(elem) + ">" + text + _parse_children(toc, elem) + "</a>"
+
+def parse_b(toc, elem):
+    return "<b>" + fixup_text(elem.text + _parse_children(toc, elem), toc) + "</b>"
+
+def parse_p(toc, elem):
+    return "<p>" + _parse_inner_xml(toc, elem) + "</p>"
 
 def parse_icode(toc, elem):
-    return "<span class=hammock-icode>" + fixup_code(elem.text + _parse_children(toc, elem)) + "</span>"
+    return "<span class=hammock-icode>" + fixup_code(toc, elem.text + _parse_children(toc, elem)) + "</span>"
 
 def parse_code(toc, elem):
-    return "<div class=hammock-code>" + fixup_code(elem.text + _parse_children(toc, elem)) + "</div>"
+    cssClass = "hammock-code"
+    if "syntax" in elem.attrib:
+        cssClass += " sh_" + elem.attrib['syntax'];
+    return "<pre class='" + cssClass + "'>" + fixup_code(toc, elem.text + _parse_children(toc, elem)) + "</pre>"
+
+def parse_output(toc, elem):
+    cssClass = "hammock-output"
+    if "syntax" in elem.attrib:
+        cssClass += " sh_" + elem.attrib['syntax'];
+    return "<pre class='" + cssClass + "'>" + fixup_code(toc, elem.text + _parse_children(toc, elem)) + "</pre>"
 
 def parse_i(toc, elem):
     out = "<i>"
@@ -417,6 +440,12 @@ def get_arg(args, idx):
             return arg
         idx = idx -1
     return None
+
+def write_all_attribs(elem):
+    out = ""
+    for attrib in elem.attrib:
+        out += attrib + "=\"" + elem.attrib[attrib] + "\" "
+    return out
 
 def main(infilename):
     outdir = get_option(sys.argv, "--outdir", "out/")
